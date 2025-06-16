@@ -11,7 +11,7 @@ import SwiftData
 
 struct MoviesCoordinator: View {
     @State var movies: MovieList.State
-    @StateObject var repository: MovieRepository
+    @StateObject var interactor: MovieInteractor
     @State private var selectedMovies: [Movie.Item] = []
     
     init() {
@@ -20,12 +20,12 @@ struct MoviesCoordinator: View {
         self._movies = State(initialValue: state)
         
         let modelContainer = try? ModelContainer(for: MovieList.State.self)
-        self._repository = StateObject(wrappedValue: .init(state: state, network: network, modelContainer: modelContainer))
+        self._interactor = StateObject(wrappedValue: .init(state: state, network: network, modelContainer: modelContainer))
     }
     
     var body: some View {
         NavigationStack(path: $selectedMovies) {
-            MovieListScreen(useCase: repository) { event in
+            MovieListScreen(useCase: interactor) { event in
                 switch event {
                 case .select(let movie):
                     selectedMovies.append(movie)
@@ -33,7 +33,7 @@ struct MoviesCoordinator: View {
             }
             .environment(movies)
             .navigationDestination(for: Movie.Item.self) { movie in
-                MovieDetailScreen(useCase: repository, movie: movie) { event in
+                MovieDetailScreen(useCase: interactor, movie: movie) { event in
                     switch event {
                     case .select(let movie):
                         selectedMovies.append(movie)

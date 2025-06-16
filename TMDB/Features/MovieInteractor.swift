@@ -1,5 +1,5 @@
 //
-//  MovieRepository.swift
+//  MovieInteractor.swift
 //  TMDB
 //
 //  Created by Zsolt Molnár on 2024. 11. 24..
@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @MainActor
-class MovieRepository: ObservableObject {
+class MovieInteractor: ObservableObject {
     private let state: MovieList.State
     private let network: HTTP.Client
     private let modelContainer: ModelContainer?
@@ -48,13 +48,13 @@ class MovieRepository: ObservableObject {
     }
 }
 
-extension MovieRepository: MovieList.UseCase {
+extension MovieInteractor: MovieList.UseCase {
     func fetch() async throws {
         let movieList: HTTP.Response<TMDBAPI.MovieList> = try await network.request(
             TMDBAPI.Requests.GetTrendingMovies(timeWindow: .day),
             headers: TMDBAPI.authorizationHeader(for: token))
         let movies: [Movie.Item] = movieList.body.results // Gracefully ignore paging :)
-            .compactMap { try? MovieRepository.map(item: $0) }
+            .compactMap { try? MovieInteractor.map(item: $0) }
         self.state.movies = movies
         
         if let modelContext {
@@ -65,7 +65,7 @@ extension MovieRepository: MovieList.UseCase {
     }
 }
 
-extension MovieRepository: MovieDetail.UseCase {
+extension MovieInteractor: MovieDetail.UseCase {
     private static func map(item: TMDBAPI.MovieListItem) throws -> Movie.Item {
         guard let posterPath = item.posterPath else {
             throw MappingError.missingField("posterPath")
@@ -106,7 +106,7 @@ extension MovieRepository: MovieDetail.UseCase {
             headers: TMDBAPI.authorizationHeader(for: token))
         
         let movies: [Movie.Item] = response.body.results // Gracefully ignore paging :)
-            .compactMap { try? MovieRepository.map(item: $0) }
+            .compactMap { try? MovieInteractor.map(item: $0) }
         return movies
     }
 }
